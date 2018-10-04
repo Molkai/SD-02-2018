@@ -9,9 +9,9 @@ class Multicast implements Runnable {
     public static LinkedList<Message> messages = new LinkedList<Message>();
     public static LinkedList<Message> acks = new LinkedList<Message>();
 
-	public Multicast (Socket connectionSocket){
+	public Multicast (Socket connectionSocket, int c){
 		this.csocket = connectionSocket;
-		clock = 5;
+		clock = c;
 		pid = 1;
 	}
 
@@ -25,12 +25,13 @@ class Multicast implements Runnable {
 	private static Runnable receive = new Runnable() {
         public void run() {
         	try{
+            clock = 5;
 	        	ServerSocket welcomeSocket = new ServerSocket(6521);
 
 				while(true) {
 					Socket connectionSocket = welcomeSocket.accept();
 
-					Multicast s = new Multicast(connectionSocket);
+					Multicast s = new Multicast(connectionSocket, clock);
 					Thread t = new Thread(s);
 					t.start();
 				}
@@ -56,11 +57,12 @@ class Multicast implements Runnable {
                 for(Message msg : messages){
                     if (msg.getClock() == clock_pid){ //Procura pela mensagem sendo agradecida na fila de mensagens
                         msg.receivedAck();
-                        System.out.printf("Ack para clock: \"%d\" e texto: \"%s\" recebido!\n Acks faltando: %d\n", msg.getClock(), msg.getText(), 3 - msg.getQuantAck());
+                        System.out.printf("Ack para clock global: \"%d\" e texto: \"%s\" recebido!\n Acks faltando: %d\n", msg.getClock(), msg.getText(), 3 - msg.getQuantAck());
 
-                        if (messages.peekFirst().getQuantAck() == 3){ //Checa se a primeira msg da fila recebeu todos os acks
+                        if (messages.peekFirst() != null && messages.peekFirst().getQuantAck() == 3){ //Checa se a primeira msg da fila recebeu todos os acks
                             Message entrega = messages.remove(); // Se sim, remove da fila e entrega para a aplicação
                             System.out.printf("Mensagem removida da fila e entregue: %s\n", entrega.getText());
+                            System.out.printf("Clock: %d\n", clock);
                         }
 
                         achouMsg = true;
@@ -83,15 +85,14 @@ class Multicast implements Runnable {
                         acks.add(newAck);
                     }
 
-                    System.out.printf("Ack para clock: \"%d\" recebido! \n Entretanto, a mensagem correspondente não foi encontrada na fila \n Aguardando mensagem para agradecer...", clock_pid);
+                    System.out.printf("Ack para clock global: \"%d\" recebido! \n Entretanto, a mensagem correspondente não foi encontrada na fila \n Aguardando mensagem para agradecer...", clock_pid);
                 }
                 //fim das coisas da fila de msg
 				int messageClock = Integer.parseInt(inFromClient.readLine());
 				if(messageClock > clock)
-					clock = messageClock + 1;
-				else
-					clock++;
-				System.out.printf("clock: %d\n", clock);
+          clock = messageClock + 1;
+        else
+          clock++;
 			}
 			else if(ack.equals("0") == true){
 				int messageClock = Integer.parseInt(inFromClient.readLine());
@@ -102,13 +103,13 @@ class Multicast implements Runnable {
                 Message newMsg = new Message(messageClock*10 + messagePid, text);
                 for(Message msgAck : acks){
                     if(msgAck.getClock() == newMsg.getClock()){ //Se encontrar um ack que chegou antecipadamente
-                        System.out.printf("Ack antecipado para clock: \"%d\" e texto: \"%s\" foi encontrado!\n", newMsg.getClock(), newMsg.getText());
+                        System.out.printf("Ack antecipado para clock global: \"%d\" e texto: \"%s\" foi encontrado!\n", newMsg.getClock(), newMsg.getText());
                         for(int j = 0; j < msgAck.getQuantAck(); j++){ // Agradece pelo número de acks recebidos para aquele clock global
                             newMsg.receivedAck();
                             System.out.printf("Ack recebido!\n");
                         }
 
-                        acks.remove(acks.indexOf(ack));
+                        acks.remove(acks.indexOf(msgAck));
                         break;
                     }
                 }
@@ -124,12 +125,12 @@ class Multicast implements Runnable {
                     }
                 }
 
-                System.out.printf("Mensagem com clock \"%d\" e texto: \"%s\" foi adicionada na fila!\n", newMsg.getClock(), newMsg.getText());
+                System.out.printf("Mensagem com clock global \"%d\" e texto: \"%s\" foi adicionada na fila!\n", newMsg.getClock(), newMsg.getText());
                 //fim das coisas da fila de msg
 				if(messageClock > clock)
-					clock = messageClock + 1;
-				else
-					clock++;
+          clock = messageClock + 1;
+        else
+          clock++;
 				int clock_pid;
 				clock_pid = messageClock*10+messagePid; // Aqui não deveria ser messageClock*10+messagePid?
 				StringBuilder ackMessage = new StringBuilder();
@@ -172,4 +173,15 @@ class Multicast implements Runnable {
 			}
         }
     };
+
+    public static synchronized void clockUpdate(int messageClock){
+      if(messageClock == -1){
+        System.out.printf("clock: %d\n", clock);
+        return;
+      }
+      if(messageClock > clock)
+          clock = messageClock + 1;
+        else
+          clock++;
+    }
 }

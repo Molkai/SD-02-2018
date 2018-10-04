@@ -10,6 +10,7 @@ public class Message{
 	}
 
 	public Message(int c){
+    clock_pid = c;
 		quant = 1;
 	}
 
