@@ -9,7 +9,7 @@ public class Message{
 		text_mes = text;
 	}
 
-	public Message(){
+	public Message(int c){
 		quant = 1;
 	}
 
