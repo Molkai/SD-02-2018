@@ -13,6 +13,7 @@ class Mutual implements Runnable {
     public static int pid;
     public static LinkedList<Message> messages = new LinkedList<Message>();
     public static int[] using = new int[3];
+    public static int[] remover = new int[2];
 
     public Mutual (Socket connectionSocket, int c){
         this.csocket = connectionSocket;
@@ -88,6 +89,7 @@ class Mutual implements Runnable {
                     using[2] = 0;
                 }
                  // Se sim, remove da fila e entrega para a aplicação
+                i = 0;
                 for(Message msg2 : messages)
                     if(msg2.getResource() == entrega.getResource()){
                         StringBuilder ackMessage = new StringBuilder();
@@ -96,8 +98,16 @@ class Mutual implements Runnable {
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
-                        Message msg = messages.remove(messages.indexOf(msg2));
+                        remover[i] = messages.indexOf(msg2) - i;
+                        i++;
+                        System.out.printf("ACK para: %d clock: %d\n",msg2.getProcess(), msg2.getClock());
                     }
+                System.out.printf("\n");
+                for(int j = 0; j < i; j++){
+                    Message msg = messages.remove(remover[i]);
+                    System.out.printf("Retirada da fila clock: %d\n", msg.getClock());
+                }
+                System.out.printf("\n");
             }
         }
         else if(ack.equals("0") == true){
@@ -136,8 +146,8 @@ class Mutual implements Runnable {
                 outToServer.writeBytes(nackMessage.toString());
                 clientSocket.close();
             }
-            else if(msg != null){
-                if(clock_pid < msg.getClock()){
+            else if(pid != messagePid && msg != null){
+                if(clock_pid > msg.getClock()){
                     Message newMsg = new Message(messageClock*10 + messagePid, messageRid, messagePid);
                     if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
                         messages.add(newMsg);
