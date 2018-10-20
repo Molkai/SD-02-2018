@@ -13,11 +13,12 @@ class Mutual implements Runnable {
     public static int pid;
     public static LinkedList<Message> messages = new LinkedList<Message>();
     public static int[] using = new int[3];
+    public static int[] remover = new int[2];
 
     public Mutual (Socket connectionSocket, int c){
         this.csocket = connectionSocket;
         clock = c;
-        pid = /*0, 1 ou 2*/;
+        pid = /*0,1 ou 2*/;
     }
 
     public static void main(String argv[]) throws Exception {
@@ -88,6 +89,10 @@ class Mutual implements Runnable {
                     using[2] = 0;
                 }
                  // Se sim, remove da fila e entrega para a aplicação
+                i = 0;
+                for(Message msg2 : messages)
+                    System.out.printf("%d ", msg2.getClock());
+                System.out.printf("\n\n");
                 for(Message msg2 : messages)
                     if(msg2.getResource() == entrega.getResource()){
                         StringBuilder ackMessage = new StringBuilder();
@@ -96,8 +101,16 @@ class Mutual implements Runnable {
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
-                        Message msg = messages.remove(messages.indexOf(msg2));
+                        remover[i] = messages.indexOf(msg2) - i;
+                        i++;
+                        System.out.printf("ACK para: %d clock: %d\n",msg2.getProcess(), msg2.getClock());
                     }
+                System.out.printf("\n%d\n\n", i);
+                for(int j = 0; j < i; j++){
+                    Message msg = messages.remove(remover[j]);
+                    System.out.printf("Retirada da fila clock: %d\n", msg.getClock());
+                }
+                System.out.printf("\n");
             }
         }
         else if(ack.equals("0") == true){
@@ -120,14 +133,18 @@ class Mutual implements Runnable {
             if(pid != messagePid && using[messageRid-1] == 1){
                 Message newMsg = new Message(messageClock*10 + messagePid, messageRid, messagePid);
                 if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
-                    messages.add(newMsg);
+                    messages.addFirst(newMsg);
                 }else{
+                    boolean flag = false;
                     for(Message msgaux : messages){
-                        if (newMsg.getClock() > msgaux.getClock()){
+                        if (newMsg.getClock() < msgaux.getClock()){
                             messages.add(messages.indexOf(msgaux), newMsg); //Adiciona ordenadamente na fila
+                            flag = true;
                             break;
                         }
                     }
+                    if(flag == false)
+                        messages.addLast(newMsg);
                 }
                 StringBuilder nackMessage = new StringBuilder();
                 nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
@@ -136,18 +153,22 @@ class Mutual implements Runnable {
                 outToServer.writeBytes(nackMessage.toString());
                 clientSocket.close();
             }
-            else if(msg != null){
-                if(clock_pid < msg.getClock()){
+            else if(pid != messagePid && msg != null){
+                if(clock_pid > msg.getClock()){
                     Message newMsg = new Message(messageClock*10 + messagePid, messageRid, messagePid);
                     if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
-                        messages.add(newMsg);
+                        messages.addFirst(newMsg);
                     }else{
+                        boolean flag = false;
                         for(Message msgaux : messages){
-                            if (newMsg.getClock() > msgaux.getClock()){
+                            if (newMsg.getClock() < msgaux.getClock()){
                                 messages.add(messages.indexOf(msgaux), newMsg); //Adiciona ordenadamente na fila
+                                flag = true;
                                 break;
                             }
                         }
+                        if(flag == false)
+                            messages.addLast(newMsg);
                     }
                     StringBuilder nackMessage = new StringBuilder();
                     nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
@@ -200,14 +221,18 @@ class Mutual implements Runnable {
                         Message newMsg = new Message(clock*10 + pid, Integer.parseInt(resourceId), pid);
                         sendMessage = sendMessage.append("0" + '\n' + Integer.toString(clock) + '\n' + Integer.toString(pid) + '\n' + resourceId + '\n');
                         if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
-                            messages.add(newMsg);
+                            messages.addFirst(newMsg);
                         }else{
-                            for(Message msg : messages){
-                                if (newMsg.getClock() > msg.getClock()){
-                                    messages.add(messages.indexOf(msg), newMsg); //Adiciona ordenadamente na fila
+                            boolean flagQueue = false;
+                            for(Message msgaux : messages){
+                                if (newMsg.getClock() < msgaux.getClock()){
+                                    messages.add(messages.indexOf(msgaux), newMsg); //Adiciona ordenadamente na fila
+                                    flagQueue = true;
                                     break;
                                 }
                             }
+                            if(flagQueue == false)
+                                messages.addLast(newMsg);
                         }
                         System.out.printf("Pedindo o uso do recurso %s\n\n", resourceId);
                         for(i = 0; i < 3; i++){
@@ -241,7 +266,7 @@ class Mutual implements Runnable {
 
     public static void resource1(){
         try{
-            System.out.print("Usando o recurso 1.....");
+            System.out.print("Usando o recurso 1\n\n");
             Thread.sleep(5000);
             System.out.print("Recurso 1 liberado.\n\n");
         }
@@ -252,7 +277,7 @@ class Mutual implements Runnable {
 
     public static void resource2(){
         try{
-            System.out.print("Usando o recurso 2.....");
+            System.out.print("Usando o recurso 2\n\n");
             Thread.sleep(7000);
             System.out.print("Recurso 2 liberado.\n\n");
         }
@@ -263,7 +288,7 @@ class Mutual implements Runnable {
 
     public static void resource3(){
         try{
-            System.out.print("Usando o recurso 3.....");
+            System.out.print("Usando o recurso 3\n\n");
             Thread.sleep(10000);
             System.out.print("Recurso 3 liberado.\n\n");
         }
