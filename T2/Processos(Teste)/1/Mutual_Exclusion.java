@@ -97,7 +97,7 @@ class Mutual implements Runnable {
                     if(msg2.getResource() == entrega.getResource()){
                         StringBuilder ackMessage = new StringBuilder();
                         ackMessage = ackMessage.append("1" + '\n' + Integer.toString(msg2.getClock()) + '\n' + Integer.toString(clock) + '\n');
-                        Socket clientSocket = new Socket("192.168.25.120", 6520+msg2.getProcess());
+                        Socket clientSocket = new Socket("192.168.0.100", 6520+msg2.getProcess());
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
@@ -130,7 +130,7 @@ class Mutual implements Runnable {
                     break;
                 }
             }
-            if(pid != messagePid && using[messageRid-1] == 1){
+            if(pid != messagePid && using[messageRid-1] == 1){ //estou usando
                 Message newMsg = new Message(messageClock*10 + messagePid, messageRid, messagePid);
                 if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
                     messages.addFirst(newMsg);
@@ -148,12 +148,12 @@ class Mutual implements Runnable {
                 }
                 StringBuilder nackMessage = new StringBuilder();
                 nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket("192.168.25.120", 6520+messagePid);
+                Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(nackMessage.toString());
                 clientSocket.close();
             }
-            else if(pid != messagePid && msg != null){
+            else if(pid != messagePid && msg != null){ // Não estou usando, mas quero usar
                 if(clock_pid > msg.getClock()){
                     Message newMsg = new Message(messageClock*10 + messagePid, messageRid, messagePid);
                     if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
@@ -172,22 +172,22 @@ class Mutual implements Runnable {
                     }
                     StringBuilder nackMessage = new StringBuilder();
                     nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket("192.168.25.120", 6520+messagePid);
+                    Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(nackMessage.toString());
                     clientSocket.close();
                 } else{
                     StringBuilder ackMessage = new StringBuilder();
                     ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket("192.168.25.120", 6520+messagePid);
+                    Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(ackMessage.toString());
                     clientSocket.close();
                 }
-            } else {
+            } else { //Não estou usando e nem quero usar
                 StringBuilder ackMessage = new StringBuilder();
                 ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket("192.168.25.120", 6520+messagePid);
+                Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(ackMessage.toString());
                 clientSocket.close();
@@ -216,7 +216,7 @@ class Mutual implements Runnable {
                             break;
                         }
                     }
-                    if(flag == false){
+                    if(flag == false && using[Integer.parseInt(resourceId) - 1] != 1){
                         clock++;
                         Message newMsg = new Message(clock*10 + pid, Integer.parseInt(resourceId), pid);
                         sendMessage = sendMessage.append("0" + '\n' + Integer.toString(clock) + '\n' + Integer.toString(pid) + '\n' + resourceId + '\n');
@@ -236,11 +236,13 @@ class Mutual implements Runnable {
                         }
                         System.out.printf("Pedindo o uso do recurso %s\n\n", resourceId);
                         for(i = 0; i < 3; i++){
-                            Socket clientSocket = new Socket("192.168.25.120", 6520+i);
+                            Socket clientSocket = new Socket("192.168.0.100", 6520+i);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
+                    }else{
+                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n", Integer.parseInt(resourceId));
                     }
                 }
             }

@@ -101,7 +101,7 @@ class Mutual implements Runnable {
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
-                        remover[i] = messages.indexOf(msg2) - i;
+                        remover[i] = messages.indexOf(msg2) - i;//hmm
                         i++;
                         System.out.printf("ACK para: %d clock: %d\n",msg2.getProcess(), msg2.getClock());
                     }
@@ -216,7 +216,7 @@ class Mutual implements Runnable {
                             break;
                         }
                     }
-                    if(flag == false){
+                    iif(flag == false && using[Integer.parseInt(resourceId) - 1] != 1){
                         clock++;
                         Message newMsg = new Message(clock*10 + pid, Integer.parseInt(resourceId), pid);
                         sendMessage = sendMessage.append("0" + '\n' + Integer.toString(clock) + '\n' + Integer.toString(pid) + '\n' + resourceId + '\n');
@@ -241,6 +241,8 @@ class Mutual implements Runnable {
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
+                    }else{
+                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n", Integer.parseInt(resourceId));
                     }
                 }
             }
