@@ -18,7 +18,7 @@ class Mutual implements Runnable {
     public Mutual (Socket connectionSocket, int c){
         this.csocket = connectionSocket;
         clock = c;
-        pid = 1;
+        pid = /*0,1 ou 2*/;
     }
 
     public static void main(String argv[]) throws Exception {
@@ -34,7 +34,7 @@ class Mutual implements Runnable {
     private static Runnable receive = new Runnable() {
         public void run() {
             try{
-                ServerSocket welcomeSocket = new ServerSocket(6521);
+                ServerSocket welcomeSocket = new ServerSocket(/*6520, 6521 ou 6522*/);
 
                 while(true) {
                     Socket connectionSocket = welcomeSocket.accept();
@@ -90,22 +90,25 @@ class Mutual implements Runnable {
                 }
                  // Se sim, remove da fila e entrega para a aplicação
                 i = 0;
+                System.out.printf("Fila:");
+                for(Message msg2 : messages)
+                    System.out.printf("%d ", msg2.getClock());
+                System.out.printf("\n\n");
                 for(Message msg2 : messages)
                     if(msg2.getResource() == entrega.getResource()){
                         StringBuilder ackMessage = new StringBuilder();
                         ackMessage = ackMessage.append("1" + '\n' + Integer.toString(msg2.getClock()) + '\n' + Integer.toString(clock) + '\n');
-                        Socket clientSocket = new Socket("192.168.0.100", 6520+msg2.getProcess());
+                        Socket clientSocket = new Socket(/*IP*/, 6520+msg2.getProcess());
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
-                        remover[i] = messages.indexOf(msg2) - i;
+                        remover[i] = messages.indexOf(msg2) - i;//hmm
                         i++;
-                        System.out.printf("ACK para: %d clock: %d\n",msg2.getProcess(), msg2.getClock());
+                        System.out.printf("ACK para processo %d e mensagem com clock global %d\n",msg2.getProcess(), msg2.getClock());
                     }
-                System.out.printf("\n");
                 for(int j = 0; j < i; j++){
                     Message msg = messages.remove(remover[j]);
-                    System.out.printf("Retirada da fila clock: %d\n", msg.getClock());
+                    System.out.printf("Retirada da fila mensagem com clock global %d\n", msg.getClock());
                 }
                 System.out.printf("\n");
             }
@@ -145,7 +148,7 @@ class Mutual implements Runnable {
                 }
                 StringBuilder nackMessage = new StringBuilder();
                 nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
+                Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(nackMessage.toString());
                 clientSocket.close();
@@ -169,14 +172,14 @@ class Mutual implements Runnable {
                     }
                     StringBuilder nackMessage = new StringBuilder();
                     nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
+                    Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(nackMessage.toString());
                     clientSocket.close();
                 } else{
                     StringBuilder ackMessage = new StringBuilder();
                     ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
+                    Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(ackMessage.toString());
                     clientSocket.close();
@@ -184,7 +187,7 @@ class Mutual implements Runnable {
             } else {
                 StringBuilder ackMessage = new StringBuilder();
                 ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket("192.168.0.100", 6520+messagePid);
+                Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(ackMessage.toString());
                 clientSocket.close();
@@ -233,13 +236,13 @@ class Mutual implements Runnable {
                         }
                         System.out.printf("Pedindo o uso do recurso %s\n\n", resourceId);
                         for(i = 0; i < 3; i++){
-                            Socket clientSocket = new Socket("192.168.0.100", 6520+i);
+                            Socket clientSocket = new Socket(/*IP*/, 6520+i);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
                     }else{
-                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n", Integer.parseInt(resourceId));
+                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n\n", Integer.parseInt(resourceId));
                     }
                 }
             }

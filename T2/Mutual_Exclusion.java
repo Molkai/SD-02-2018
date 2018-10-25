@@ -90,6 +90,7 @@ class Mutual implements Runnable {
                 }
                  // Se sim, remove da fila e entrega para a aplicação
                 i = 0;
+                System.out.printf("Fila:");
                 for(Message msg2 : messages)
                     System.out.printf("%d ", msg2.getClock());
                 System.out.printf("\n\n");
@@ -103,12 +104,11 @@ class Mutual implements Runnable {
                         clientSocket.close();
                         remover[i] = messages.indexOf(msg2) - i;//hmm
                         i++;
-                        System.out.printf("ACK para: %d clock: %d\n",msg2.getProcess(), msg2.getClock());
+                        System.out.printf("ACK para processo %d e mensagem com clock global %d\n",msg2.getProcess(), msg2.getClock());
                     }
-                System.out.printf("\n%d\n\n", i);
                 for(int j = 0; j < i; j++){
                     Message msg = messages.remove(remover[j]);
-                    System.out.printf("Retirada da fila clock: %d\n", msg.getClock());
+                    System.out.printf("Retirada da fila mensagem com clock global %d\n", msg.getClock());
                 }
                 System.out.printf("\n");
             }
@@ -216,7 +216,7 @@ class Mutual implements Runnable {
                             break;
                         }
                     }
-                    iif(flag == false && using[Integer.parseInt(resourceId) - 1] != 1){
+                    if(flag == false && using[Integer.parseInt(resourceId) - 1] != 1){
                         clock++;
                         Message newMsg = new Message(clock*10 + pid, Integer.parseInt(resourceId), pid);
                         sendMessage = sendMessage.append("0" + '\n' + Integer.toString(clock) + '\n' + Integer.toString(pid) + '\n' + resourceId + '\n');
@@ -242,7 +242,7 @@ class Mutual implements Runnable {
                             clientSocket.close();
                         }
                     }else{
-                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n", Integer.parseInt(resourceId));
+                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n\n", Integer.parseInt(resourceId));
                     }
                 }
             }
