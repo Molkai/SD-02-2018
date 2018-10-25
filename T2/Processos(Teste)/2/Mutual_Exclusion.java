@@ -18,7 +18,7 @@ class Mutual implements Runnable {
     public Mutual (Socket connectionSocket, int c){
         this.csocket = connectionSocket;
         clock = c;
-        pid = /*0,1 ou 2*/;
+        pid = 1;
     }
 
     public static void main(String argv[]) throws Exception {
@@ -34,7 +34,7 @@ class Mutual implements Runnable {
     private static Runnable receive = new Runnable() {
         public void run() {
             try{
-                ServerSocket welcomeSocket = new ServerSocket(/*6520, 6521 ou 6522*/);
+                ServerSocket welcomeSocket = new ServerSocket(6521);
 
                 while(true) {
                     Socket connectionSocket = welcomeSocket.accept();
@@ -98,7 +98,7 @@ class Mutual implements Runnable {
                     if(msg2.getResource() == entrega.getResource()){
                         StringBuilder ackMessage = new StringBuilder();
                         ackMessage = ackMessage.append("1" + '\n' + Integer.toString(msg2.getClock()) + '\n' + Integer.toString(clock) + '\n');
-                        Socket clientSocket = new Socket(/*IP*/, 6520+msg2.getProcess());
+                        Socket clientSocket = new Socket("192.168.0.11", 6520+msg2.getProcess());
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(ackMessage.toString());
                         clientSocket.close();
@@ -148,7 +148,7 @@ class Mutual implements Runnable {
                 }
                 StringBuilder nackMessage = new StringBuilder();
                 nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
+                Socket clientSocket = new Socket("192.168.0.11", 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(nackMessage.toString());
                 clientSocket.close();
@@ -172,14 +172,14 @@ class Mutual implements Runnable {
                     }
                     StringBuilder nackMessage = new StringBuilder();
                     nackMessage = nackMessage.append("2" + '\n' +  Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
+                    Socket clientSocket = new Socket("192.168.0.11", 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(nackMessage.toString());
                     clientSocket.close();
                 } else{
                     StringBuilder ackMessage = new StringBuilder();
                     ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                    Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
+                    Socket clientSocket = new Socket("192.168.0.11", 6520+messagePid);
                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                     outToServer.writeBytes(ackMessage.toString());
                     clientSocket.close();
@@ -187,7 +187,7 @@ class Mutual implements Runnable {
             } else {
                 StringBuilder ackMessage = new StringBuilder();
                 ackMessage = ackMessage.append("1" + '\n' + Integer.toString(clock_pid) + '\n' + Integer.toString(clock) + '\n');
-                Socket clientSocket = new Socket(/*IP*/, 6520+messagePid);
+                Socket clientSocket = new Socket("192.168.0.11", 6520+messagePid);
                 DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                 outToServer.writeBytes(ackMessage.toString());
                 clientSocket.close();
@@ -236,7 +236,7 @@ class Mutual implements Runnable {
                         }
                         System.out.printf("Pedindo o uso do recurso %s\n\n", resourceId);
                         for(i = 0; i < 3; i++){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+i);
+                            Socket clientSocket = new Socket("192.168.0.11", 6520+i);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
