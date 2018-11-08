@@ -1,3 +1,8 @@
+/*
+Nomes: Vinícius de Souza Carvalho RA: 726592
+       Vitor Mesquita Fogaça          726597
+*/
+
 public class Message{
 	private int clock_pid;
 	private int quant;
