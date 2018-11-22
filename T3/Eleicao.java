@@ -45,34 +45,56 @@ class Eleicao implements Runnable {
         }
     };
 
-  public void run(){
-    try{
-        int i;
+    public void run(){
+        try{
+            int i;
 
-        BufferedReader inFromClient = new BufferedReader(new InputStreamReader(this.csocket.getInputStream()));
-        String e = inFromClient.readLine();
-        if(e.equals("2") == true){
-            no.receiveResp();
-            if(checkQuant() == true){
-                StringBuilder toFather = new StringBuilder();
-                toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
-                Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
-                DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                outToServer.writeBytes(toFather.toString());
-                clientSocket.close();
+            BufferedReader inFromClient = new BufferedReader(new InputStreamReader(this.csocket.getInputStream()));
+            String e = inFromClient.readLine();
+            if(e.equals("2") == true){
+                no.receiveResp();
+                if(checkQuant() == true){
+                    StringBuilder toFather = new StringBuilder();
+                    toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+                    Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+                    DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                    outToServer.writeBytes(toFather.toString());
+                    clientSocket.close();
+                }
+            }
+            else if(e.equals("1") == true){
+                int rResource = Integer.parseInt(inFromClient.readLine());
+                int rPid = Integer.parseInt(inFromClient.readLine());
+                no.receiveSon(rResource, rPid);
+                no.receiveResp();
+                if(checkQuant() == true){
+                    StringBuilder toFather = new StringBuilder();
+                    toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+                    Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+                    DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                    outToServer.writeBytes(toFather.toString());
+                    clientSocket.close();
+                }
+                no = null;
+            }
+            else if(e.equals("0") == true){
+                int rPid = Integer.parseInt(inFromClient.readLine());
+                if(checkPai(rPid) == true){
+                    StringBuilder toNode = new StringBuilder();
+                    toNode = toNode.append("2" + '\n');
+                    Socket clientSocket = new Socket(/*IP*/, 6520+rPid);
+                    DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                    outToServer.writeBytes(toNode.toString());
+                    clientSocket.close();
+                } else {
+
+                }
             }
         }
-        else if(ack.equals("1") == true){
-
-        }
-        else if(ack.equals("0") == true){
-
+        catch(IOException a) {
+                a.printStackTrace();
         }
     }
-    catch(IOException a) {
-            a.printStackTrace();
-    }
-  }
 
   private static Runnable send = new Runnable() {
         public void run() {
@@ -133,5 +155,13 @@ class Eleicao implements Runnable {
             return true;
         }
         return false;
+    }
+
+    public static synchronized boolean checkPai(int pai){
+        if(no == null){
+            no = new Node(pai, resource, pid);
+            return false;
+        }
+        return true;
     }
 }
