@@ -54,12 +54,24 @@ class Eleicao implements Runnable {
             if(e.equals("2") == true){
                 no.receiveResp();
                 if(checkQuant() == true){
-                    StringBuilder toFather = new StringBuilder();
-                    toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
-                    Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
-                    DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                    outToServer.writeBytes(toFather.toString());
-                    clientSocket.close();
+                    if(no.getProcess() == -1){
+                        StringBuilder sendMessage = new StringBuilder();
+                        sendMessage = sendMessage.append("4" + '\n' + Integer.toString(no.getResource()) + '\n');
+                        sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
+                        for(i = 0; i < adj.length(); i++){
+                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                            outToServer.writeBytes(sendMessage.toString());
+                            clientSocket.close();
+                        }
+                    } else {
+                        StringBuilder toFather = new StringBuilder();
+                        toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+                        Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+                        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                        outToServer.writeBytes(toFather.toString());
+                        clientSocket.close();
+                    }
                 }
             }
             else if(e.equals("1") == true){
@@ -68,14 +80,25 @@ class Eleicao implements Runnable {
                 no.receiveSon(rResource, rPid);
                 no.receiveResp();
                 if(checkQuant() == true){
-                    StringBuilder toFather = new StringBuilder();
-                    toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
-                    Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
-                    DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                    outToServer.writeBytes(toFather.toString());
-                    clientSocket.close();
+                    if(no.getProcess() == -1){
+                        StringBuilder sendMessage = new StringBuilder();
+                        sendMessage = sendMessage.append("4" + '\n' + Integer.toString(no.getResource()) + '\n');
+                        sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
+                        for(i = 0; i < adj.length(); i++){
+                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                            outToServer.writeBytes(sendMessage.toString());
+                            clientSocket.close();
+                        }
+                    } else {
+                        StringBuilder toFather = new StringBuilder();
+                        toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+                        Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+                        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                        outToServer.writeBytes(toFather.toString());
+                        clientSocket.close();
+                    }
                 }
-                no = null;
             }
             else if(e.equals("0") == true){
                 int rPid = Integer.parseInt(inFromClient.readLine());
@@ -87,7 +110,16 @@ class Eleicao implements Runnable {
                     outToServer.writeBytes(toNode.toString());
                     clientSocket.close();
                 } else {
-
+                    StringBuilder toNode = new StringBuilder();
+                    toNode = toNode.append("0" + '\n' + Integer.toString(pid) + '\n');
+                    for(i = 0; i < adj.length(); i++){
+                        if(adj[i] != no.getProcess()){
+                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                            outToServer.writeBytes(toNode.toString());
+                            clientSocket.close();
+                        }
+                    }
                 }
             }
         }
@@ -103,43 +135,20 @@ class Eleicao implements Runnable {
                 boolean flag;
 
                 while(true){
-                    flag = false;
                     StringBuilder sendMessage = new StringBuilder();
                     BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-                    String resourceId = inFromUser.readLine();
-                    for(Message msg : messages){
-                        if(msg.getResource() == Integer.parseInt(resourceId) && msg.getProcess() == pid){
-                            flag = true;
-                            break;
-                        }
-                    }
-                    if(flag == false && using[Integer.parseInt(resourceId) - 1] != 1){
-                        clock++;
-                        Message newMsg = new Message(clock*10 + pid, Integer.parseInt(resourceId), pid);
-                        sendMessage = sendMessage.append("0" + '\n' + Integer.toString(clock) + '\n' + Integer.toString(pid) + '\n' + resourceId + '\n');
-                        if (messages.peekFirst() == null){ //Se a fila de msgs estiver vazia;
-                            messages.addFirst(newMsg);
-                        }else{
-                            boolean flagQueue = false;
-                            for(Message msgaux : messages){
-                                if (newMsg.getClock() < msgaux.getClock()){
-                                    messages.add(messages.indexOf(msgaux), newMsg); //Adiciona ordenadamente na fila
-                                    flagQueue = true;
-                                    break;
-                                }
-                            }
-                            if(flagQueue == false)
-                                messages.addLast(newMsg);
-                        }
-                        System.out.printf("Pedindo o uso do recurso %s\n\n", resourceId);
-                        for(i = 0; i < 3; i++){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+i);
+                    String eleicao = inFromUser.readLine();
+                    if(checkPai(-1) == false){
+                        sendMessage = sendMessage.append("0" + '\n' + Integer.toString(pid) + '\n');
+                        System.out.printf("Iniciando Eleição\n\n");
+                        for(i = 0; i < adj.length(); i++){
+                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
                     }else{
-                        System.out.printf("\nO recurso %d ja esta sendo usado por este processo, ou o processo ja esta na fila para utiliza-lo\n\n", Integer.parseInt(resourceId));
+                        System.out.printf("Já esta ocorrendo uma eleição\n\n");
                     }
                 }
             }
@@ -150,7 +159,7 @@ class Eleicao implements Runnable {
     };
 
      public static synchronized boolean checkQuant(){
-        if(no.getQuant() == adj.lenght()){
+        if(no.getQuant() == adj.length()){
             no.resetQuant();
             return true;
         }
