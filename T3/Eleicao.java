@@ -9,10 +9,10 @@ import java.util.*;
 
 class Eleicao implements Runnable {
     public Socket csocket;
-    private int resource = /*Algum numero*/;
-    private int pid = /*Entre 0 e 9*/;
-    private int[] adj;
-    private Node no;
+    private static int resource = /*Numero do recurso*/;
+    private static int pid = /*Numero entre 0 e 9*/;
+    private static int adj[] = {/*Pid dos processos adjacentes*/};
+    private static Node no;
 
     public Eleicao (Socket connectionSocket){
         this.csocket = connectionSocket;
@@ -20,7 +20,6 @@ class Eleicao implements Runnable {
 
     public static void main(String argv[]) throws Exception {
 
-        adj = new int[/*Numero de nos adjacentes a ele*/] {/*pid dos nos adjacentes*/};
         new Thread(receive).start();
         new Thread(send).start();
 
@@ -29,12 +28,12 @@ class Eleicao implements Runnable {
     private static Runnable receive = new Runnable() {
         public void run() {
             try{
-                ServerSocket welcomeSocket = new ServerSocket(/*Entre 6520 e 6529*/);
+                ServerSocket welcomeSocket = new ServerSocket(/*Porta entre 6520 e 6529*/);
 
                 while(true) {
                     Socket connectionSocket = welcomeSocket.accept();
 
-                    Mutual s = new Mutual(connectionSocket);
+                    Eleicao s = new Eleicao(connectionSocket);
                     Thread t = new Thread(s);
                     t.start();
                 }
@@ -51,19 +50,43 @@ class Eleicao implements Runnable {
 
             BufferedReader inFromClient = new BufferedReader(new InputStreamReader(this.csocket.getInputStream()));
             String e = inFromClient.readLine();
-            if(e.equals("2") == true){
+            if (e.equals("3") == true){
+                int maiorResource = Integer.parseInt(inFromClient.readLine());
+                int maiorPid = Integer.parseInt(inFromClient.readLine());
+                int rcvPid = Integer.parseInt(inFromClient.readLine());
+
+                if (rcvPid == no.getProcess()){
+                    StringBuilder sendBest = new StringBuilder();
+                    sendBest = sendBest.append("3" + '\n' + Integer.toString(maiorResource) + '\n' + Integer.toString(maiorPid) + '\n' + Integer.toString(pid));
+
+                    for(i = 0; i < adj.length; i++){
+                        if(adj[i] != no.getProcess()){
+                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                            outToServer.writeBytes(sendBest.toString());
+                            clientSocket.close();
+                        }
+                    }
+
+                    System.out.println("Líder elegido: " + maiorPid + "\n");
+                    no = null;
+                }
+            }
+            else if(e.equals("2") == true){
                 no.receiveResp();
                 if(checkQuant() == true){
                     if(no.getProcess() == -1){
+                        System.out.println("Líder elegido: " + no.getId() + "\n");
                         StringBuilder sendMessage = new StringBuilder();
-                        sendMessage = sendMessage.append("4" + '\n' + Integer.toString(no.getResource()) + '\n');
+                        sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
                         sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
-                        for(i = 0; i < adj.length(); i++){
+                        for(i = 0; i < adj.length; i++){
                             Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
+                        no = null;
                     } else {
                         StringBuilder toFather = new StringBuilder();
                         toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
@@ -81,15 +104,17 @@ class Eleicao implements Runnable {
                 no.receiveResp();
                 if(checkQuant() == true){
                     if(no.getProcess() == -1){
+                        System.out.println("Líder elegido: " + no.getId() + "\n");
                         StringBuilder sendMessage = new StringBuilder();
-                        sendMessage = sendMessage.append("4" + '\n' + Integer.toString(no.getResource()) + '\n');
+                        sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
                         sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
-                        for(i = 0; i < adj.length(); i++){
+                        for(i = 0; i < adj.length; i++){
                             Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
                             clientSocket.close();
                         }
+                        no = null;
                     } else {
                         StringBuilder toFather = new StringBuilder();
                         toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
@@ -112,12 +137,17 @@ class Eleicao implements Runnable {
                 } else {
                     StringBuilder toNode = new StringBuilder();
                     toNode = toNode.append("0" + '\n' + Integer.toString(pid) + '\n');
-                    for(i = 0; i < adj.length(); i++){
+                    for(i = 0; i < adj.length; i++){
                         if(adj[i] != no.getProcess()){
                             Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(toNode.toString());
                             clientSocket.close();
+                        }
+                    }
+                    if(checkQuant() == true){
+                        if(no.getProcess() != -1){
+                            sendFather();
                         }
                     }
                 }
@@ -141,7 +171,7 @@ class Eleicao implements Runnable {
                     if(checkPai(-1) == false){
                         sendMessage = sendMessage.append("0" + '\n' + Integer.toString(pid) + '\n');
                         System.out.printf("Iniciando Eleição\n\n");
-                        for(i = 0; i < adj.length(); i++){
+                        for(i = 0; i < adj.length; i++){
                             Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendMessage.toString());
@@ -159,7 +189,7 @@ class Eleicao implements Runnable {
     };
 
      public static synchronized boolean checkQuant(){
-        if(no.getQuant() == adj.length()){
+        if(no.getQuant() == adj.length){
             no.resetQuant();
             return true;
         }
@@ -172,5 +202,19 @@ class Eleicao implements Runnable {
             return false;
         }
         return true;
+    }
+
+    public static synchronized void sendFather(){
+        try{
+            StringBuilder toFather = new StringBuilder();
+            toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+            Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+            outToServer.writeBytes(toFather.toString());
+            clientSocket.close();
+        }
+        catch(IOException a) {
+            a.printStackTrace();
+        }
     }
 }

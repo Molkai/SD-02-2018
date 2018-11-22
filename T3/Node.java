@@ -7,12 +7,15 @@ public class Node{
     private int pai;
     private int quantResp;
     private int melhorId;
-    private int maiorRecurso;
+    private int melhorRecurso;
 
 	public Node(int p, int r, int id){
         pai = p;
-        quantResp = 0;
-        maiorRecurso = r;
+        if(p == -1)
+            quantResp = 0;
+        else
+            quantResp = 1;
+        melhorRecurso = r;
         melhorId = id;
 	}
 
@@ -24,10 +27,10 @@ public class Node{
         quantResp = 0;
     }
 
-    public int receiveSon(int r, int id){
-        if(maiorRecurso < r){
+    public void receiveSon(int r, int id){
+        if(melhorRecurso < r){
             melhorId = id;
-            maiorRecurso = r;
+            melhorRecurso = r;
         }
     }
 
@@ -43,7 +46,7 @@ public class Node{
         return pai;
     }
 
-    public int[] getId(){
+    public int getId(){
         return melhorId;
     }
 }
