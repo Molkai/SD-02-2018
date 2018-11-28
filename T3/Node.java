@@ -8,8 +8,13 @@ public class Node{
     private int quantResp;
     private int melhorId;
     private int melhorRecurso;
+    private int eleicaoId;
 
-	public Node(int p, int r, int id){
+	public Node(){
+        eleicaoId = -1;
+	}
+
+    public iniciaEleicao(int p, int r, int id, int eId){
         pai = p;
         if(p == -1)
             quantResp = 0;
@@ -17,7 +22,8 @@ public class Node{
             quantResp = 1;
         melhorRecurso = r;
         melhorId = id;
-	}
+        eleicaoId = eId;
+    }
 
     public void receiveResp(){
         quantResp++;
@@ -48,5 +54,13 @@ public class Node{
 
     public int getId(){
         return melhorId;
+    }
+
+    public int getEleicaoId(){
+        return eleicaoId;
+    }
+
+    public void finalizaEleicao(){
+        eleicaoId = -1;
     }
 }
