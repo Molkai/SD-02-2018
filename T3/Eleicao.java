@@ -9,10 +9,11 @@ import java.util.*;
 
 class Eleicao implements Runnable {
     public Socket csocket;
+    private static String ip;
     private static int resource = /*Numero do recurso*/;
     private static int pid = /*Numero entre 0 e 9*/;
     private static int adj[] = {/*Pid dos processos adjacentes*/};
-    private static Node no;
+    private static Node no = new Node();
 
     public Eleicao (Socket connectionSocket){
         this.csocket = connectionSocket;
@@ -21,7 +22,6 @@ class Eleicao implements Runnable {
     public static void main(String argv[]) throws Exception {
 
         new Thread(receive).start();
-        new Thread(send).start();
 
     }
 
@@ -50,18 +50,36 @@ class Eleicao implements Runnable {
 
             BufferedReader inFromClient = new BufferedReader(new InputStreamReader(this.csocket.getInputStream()));
             String e = inFromClient.readLine();
-            if (e.equals("3") == true){
+            if (e.equals("5") == true){
+                ip = inFromClient.readLine();
+            }
+            else if (e.equals("4") == true){
+                StringBuilder sendMessage = new StringBuilder();
+                if(checkPai(-1, pid) == false){
+                    sendMessage = sendMessage.append("0" + '\n' + Integer.toString(pid) + '\n' + Integer.toString(pid) + '\n');
+                    System.out.printf("Iniciando Eleição\n\n");
+                    for(i = 0; i < adj.length; i++){
+                        Socket clientSocket = new Socket(ip, 6520+adj[i]);
+                        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                        outToServer.writeBytes(sendMessage.toString());
+                        clientSocket.close();
+                    }
+                }else{
+                    System.out.printf("Esse nó já esta participando de uma eleição\n\n");
+                }
+            }
+            else if (e.equals("3") == true){
                 int maiorResource = Integer.parseInt(inFromClient.readLine());
                 int maiorPid = Integer.parseInt(inFromClient.readLine());
                 int rcvPid = Integer.parseInt(inFromClient.readLine());
 
-                if (rcvPid == no.getProcess()){
+                if (no.getEleicaoId() != -1 && rcvPid == no.getProcess()){
                     StringBuilder sendBest = new StringBuilder();
                     sendBest = sendBest.append("3" + '\n' + Integer.toString(maiorResource) + '\n' + Integer.toString(maiorPid) + '\n' + Integer.toString(pid) + '\n');
 
                     for(i = 0; i < adj.length; i++){
                         if(adj[i] != no.getProcess()){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            Socket clientSocket = new Socket(ip, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(sendBest.toString());
                             clientSocket.close();
@@ -73,45 +91,48 @@ class Eleicao implements Runnable {
                 }
             }
             else if(e.equals("2") == true){
-                no.receiveResp();
-                if(checkQuant() == true){
-                    if(no.getProcess() == -1){
-                        System.out.println("Líder elegido: " + no.getId() + "\n");
-                        StringBuilder sendMessage = new StringBuilder();
-                        sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
-                        sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
-                        for(i = 0; i < adj.length; i++){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
-                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                            outToServer.writeBytes(sendMessage.toString());
-                            clientSocket.close();
+                int eId = Integer.parseInt(inFromClient.readLine());
+                if(receiveMsg(2, eId, -1, -1)){
+                    if(receiveMsg(4, -1, -1, -1) == true){
+                        if(no.getProcess() == -1){
+                            System.out.println("Líder elegido: " + no.getId() + "\n");
+                            StringBuilder sendMessage = new StringBuilder();
+                            sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
+                            sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
+                            for(i = 0; i < adj.length; i++){
+                                Socket clientSocket = new Socket(ip, 6520+adj[i]);
+                                DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                                outToServer.writeBytes(sendMessage.toString());
+                                clientSocket.close();
+                            }
+                            receiveMsg(3, -1, -1, -1);
+                        } else {
+                            sendFather();
                         }
-                        no.finalizaEleicao();
-                    } else {
-                        sendFather();
                     }
                 }
             }
             else if(e.equals("1") == true){
                 int rResource = Integer.parseInt(inFromClient.readLine());
                 int rPid = Integer.parseInt(inFromClient.readLine());
-                no.receiveSon(rResource, rPid);
-                no.receiveResp();
-                if(checkQuant() == true){
-                    if(no.getProcess() == -1){
-                        System.out.println("Líder elegido: " + no.getId() + "\n");
-                        StringBuilder sendMessage = new StringBuilder();
-                        sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
-                        sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
-                        for(i = 0; i < adj.length; i++){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
-                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                            outToServer.writeBytes(sendMessage.toString());
-                            clientSocket.close();
+                int eId = Integer.parseInt(inFromClient.readLine());
+                if(receiveMsg(2, eId, rResource, rPid)){
+                    if(receiveMsg(4, -1, -1, -1) == true){
+                        if(no.getProcess() == -1){
+                            System.out.println("Líder elegido: " + no.getId() + "\n");
+                            StringBuilder sendMessage = new StringBuilder();
+                            sendMessage = sendMessage.append("3" + '\n' + Integer.toString(no.getResource()) + '\n');
+                            sendMessage = sendMessage.append(Integer.toString(no.getId()) + '\n' + Integer.toString(pid) + '\n');
+                            for(i = 0; i < adj.length; i++){
+                                Socket clientSocket = new Socket(ip, 6520+adj[i]);
+                                DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+                                outToServer.writeBytes(sendMessage.toString());
+                                clientSocket.close();
+                            }
+                            receiveMsg(3, -1, -1, -1);
+                        } else {
+                            sendFather();
                         }
-                        no.finalizaEleicao();
-                    } else {
-                        sendFather();
                     }
                 }
             }
@@ -120,26 +141,26 @@ class Eleicao implements Runnable {
                 int eId = Integer.parseInt(inFromClient.readLine());
                 if(checkPai(rPid, eId) == true){
                     if(no.getEleicaoId() < eId){
-                        no.finalizaEleicao();
-                        if(!(checkPai(rPid, eId)){
+                        receiveMsg(3, -1, -1, -1);
+                        if(!(checkPai(rPid, eId))){
                             StringBuilder toNode = new StringBuilder();
                             toNode = toNode.append("0" + '\n' + Integer.toString(pid) + '\n' + Integer.toString(eId) + '\n');
                             for(i = 0; i < adj.length; i++){
                                 if(adj[i] != no.getProcess()){
-                                    Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                                    Socket clientSocket = new Socket(ip, 6520+adj[i]);
                                     DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                                     outToServer.writeBytes(toNode.toString());
                                     clientSocket.close();
                                 }
                             }
-                            if(checkQuant() == true && no.getProcess() != -1){
+                            if(receiveMsg(4, -1, -1, -1) == true && no.getProcess() != -1){
                                 sendFather();
                             }
                         }
                     } else if(eId == no.getEleicaoId()){
                         StringBuilder toNode = new StringBuilder();
-                        toNode = toNode.append("2" + '\n');
-                        Socket clientSocket = new Socket(/*IP*/, 6520+rPid);
+                        toNode = toNode.append("2" + '\n' + Integer.toString(no.getEleicaoId()));
+                        Socket clientSocket = new Socket(ip, 6520+rPid);
                         DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                         outToServer.writeBytes(toNode.toString());
                         clientSocket.close();
@@ -149,13 +170,13 @@ class Eleicao implements Runnable {
                     toNode = toNode.append("0" + '\n' + Integer.toString(pid) + '\n' + Integer.toString(eId) + '\n');
                     for(i = 0; i < adj.length; i++){
                         if(adj[i] != no.getProcess()){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
+                            Socket clientSocket = new Socket(ip, 6520+adj[i]);
                             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
                             outToServer.writeBytes(toNode.toString());
                             clientSocket.close();
                         }
                     }
-                    if(checkQuant() == true && no.getProcess() != -1){
+                    if(receiveMsg(4, -1, -1, -1) == true && no.getProcess() != -1){
                         sendFather();
                     }
                 }
@@ -164,44 +185,6 @@ class Eleicao implements Runnable {
         catch(IOException a) {
                 a.printStackTrace();
         }
-    }
-
-  private static Runnable send = new Runnable() {
-        public void run() {
-            try{
-                int i;
-                boolean flag;
-
-                while(true){
-                    StringBuilder sendMessage = new StringBuilder();
-                    BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-                    String eleicao = inFromUser.readLine();
-                    if(checkPai(-1, pid) == false){
-                        sendMessage = sendMessage.append("0" + '\n' + Integer.toString(pid) + '\n' + Integer.toString(pid) + '\n');
-                        System.out.printf("Iniciando Eleição\n\n");
-                        for(i = 0; i < adj.length; i++){
-                            Socket clientSocket = new Socket(/*IP*/, 6520+adj[i]);
-                            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-                            outToServer.writeBytes(sendMessage.toString());
-                            clientSocket.close();
-                        }
-                    }else{
-                        System.out.printf("Esse nó já esta participando de uma eleição\n\n");
-                    }
-                }
-            }
-            catch(IOException a) {
-                a.printStackTrace();
-            }
-        }
-    };
-
-     public static synchronized boolean checkQuant(){
-        if(no.getQuant() == adj.length){
-            no.resetQuant();
-            return true;
-        }
-        return false;
     }
 
     public static synchronized boolean checkPai(int pai, int eId){
@@ -214,9 +197,10 @@ class Eleicao implements Runnable {
 
     public static synchronized void sendFather(){
         try{
+            System.out.println(Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n' + Integer.toString(no.getEleicaoId()) + '\n');
             StringBuilder toFather = new StringBuilder();
-            toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
-            Socket clientSocket = new Socket(/*IP*/, 6520+no.getProcess());
+            toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n' + Integer.toString(no.getEleicaoId()) + '\n');
+            Socket clientSocket = new Socket(ip, 6520+no.getProcess());
             DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
             outToServer.writeBytes(toFather.toString());
             clientSocket.close();
@@ -224,5 +208,37 @@ class Eleicao implements Runnable {
         catch(IOException a) {
             a.printStackTrace();
         }
+    }
+
+    public static synchronized boolean receiveMsg(int control, int eId, int rId, int rResource){
+        switch(control){
+            case 1:
+                if(no.getEleicaoId() == eId){
+                    no.receiveSon(rResource, rId);
+                    no.receiveResp();
+                    return true;
+                }
+            break;
+
+            case 2:
+                if(no.getEleicaoId() == eId){
+                    no.receiveResp();
+                    return true;
+                }
+            break;
+
+            case 3:
+                no.finalizaEleicao();
+            break;
+
+            case 4:
+                if(no.getQuant() == adj.length){
+                    no.resetQuant();
+                    return true;
+                }
+                return false;
+            break;
+        }
+        return false;
     }
 }

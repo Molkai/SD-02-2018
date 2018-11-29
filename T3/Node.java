@@ -14,7 +14,7 @@ public class Node{
         eleicaoId = -1;
 	}
 
-    public iniciaEleicao(int p, int r, int id, int eId){
+    public void iniciaEleicao(int p, int r, int id, int eId){
         pai = p;
         if(p == -1)
             quantResp = 0;
