@@ -1,0 +1,5 @@
+Para executar, abrir os dez terminais com o mesmo código, só que com pid e recursos diferentes (mudar essas coisas diretamente no código), e mais um terminal para abrir a central.
+
+Na central passar primeiramente em uma linha o IP da máquina e depois passar em outra linha os nós que se deseja que inicie a eleição separados por espaço (funciona corretamente para 1 e para 2 nós, talvez para mais), na central aparecerá o nó elegido e seu recurso.
+
+Caso queira mudar o recurso enquanto já esta rodando o programa, recompilar os nós que tiverem seus recursos mudados e rodar o programa novamente, parar a central e rodar novamente e seguir os mesmos passos na linha 3.

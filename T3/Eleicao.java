@@ -105,6 +105,7 @@ class Eleicao implements Runnable {
                                 outToServer.writeBytes(sendMessage.toString());
                                 clientSocket.close();
                             }
+                            sendAnswer();
                             receiveMsg(3, -1, -1, -1);
                         } else {
                             sendFather();
@@ -116,7 +117,7 @@ class Eleicao implements Runnable {
                 int rResource = Integer.parseInt(inFromClient.readLine());
                 int rPid = Integer.parseInt(inFromClient.readLine());
                 int eId = Integer.parseInt(inFromClient.readLine());
-                if(receiveMsg(2, eId, rResource, rPid)){
+                if(receiveMsg(1, eId, rPid, rResource)){
                     if(receiveMsg(4, -1, -1, -1) == true){
                         if(no.getProcess() == -1){
                             System.out.println("Líder elegido: " + no.getId() + "\n");
@@ -129,6 +130,7 @@ class Eleicao implements Runnable {
                                 outToServer.writeBytes(sendMessage.toString());
                                 clientSocket.close();
                             }
+                            sendAnswer();
                             receiveMsg(3, -1, -1, -1);
                         } else {
                             sendFather();
@@ -141,6 +143,7 @@ class Eleicao implements Runnable {
                 int eId = Integer.parseInt(inFromClient.readLine());
                 if(checkPai(rPid, eId) == true){
                     if(no.getEleicaoId() < eId){
+                        System.out.println("Eleicao com maior prioridade ja esta acontecendo" + '\n');
                         receiveMsg(3, -1, -1, -1);
                         if(!(checkPai(rPid, eId))){
                             StringBuilder toNode = new StringBuilder();
@@ -197,7 +200,6 @@ class Eleicao implements Runnable {
 
     public static synchronized void sendFather(){
         try{
-            System.out.println(Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n' + Integer.toString(no.getEleicaoId()) + '\n');
             StringBuilder toFather = new StringBuilder();
             toFather = toFather.append("1" + '\n' + Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n' + Integer.toString(no.getEleicaoId()) + '\n');
             Socket clientSocket = new Socket(ip, 6520+no.getProcess());
@@ -236,9 +238,21 @@ class Eleicao implements Runnable {
                     no.resetQuant();
                     return true;
                 }
-                return false;
             break;
         }
         return false;
     }
+
+    public static void sendAnswer(){
+        try{
+            Socket clientSocket = new Socket(ip, 6530);
+            DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+            outToServer.writeBytes(Integer.toString(no.getResource()) + '\n' + Integer.toString(no.getId()) + '\n');
+            clientSocket.close();
+        }
+        catch(IOException a){
+            a.printStackTrace();
+        }
+    }
+
 }
